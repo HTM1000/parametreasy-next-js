@@ -217,7 +217,7 @@ function convertNodeToReact(node: HtmlNode, key: number): React.ReactNode {
     case 'q':
       return (
         <span key={key} className="wpf-quote">
-          "{node.children?.map((child, i) => convertNodeToReact(child, i))}"
+          &ldquo;{node.children?.map((child, i) => convertNodeToReact(child, i))}&rdquo;
         </span>
       )
     
