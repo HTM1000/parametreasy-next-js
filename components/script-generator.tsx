@@ -83,7 +83,7 @@ export default function ScriptGenerator() {
       
       setTimeout(typeWriter, 50) // Delay mínimo
     }
-  }, [scriptResult])
+  }, [scriptResult, displayedScript])
 
   const resetForm = () => {
     setParametro(createEmptyParametro())

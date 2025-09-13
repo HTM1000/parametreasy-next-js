@@ -1,4 +1,4 @@
-import { Parametro, ParameterType, SimNaoEnum } from '@/types/models';
+import { Parametro, SimNaoEnum } from '@/types/models';
 
 export interface ScriptResult {
   script: string;

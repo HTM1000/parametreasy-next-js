@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,6 @@ import {
   Copy,
   Check,
   Save,
-  Eye,
   Search,
   BookOpen,
   Code,
@@ -29,7 +28,7 @@ interface Examples {
   example: string
 }
 
-export default function HtmlEditorPage() {
+function HtmlEditorContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [htmlText, setHtmlText] = useState("")
@@ -617,5 +616,13 @@ __Este texto ficará sublinhado__
         </div>
       )}
     </div>
+  )
+}
+
+export default function HtmlEditorPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HtmlEditorContent />
+    </Suspense>
   )
 }
