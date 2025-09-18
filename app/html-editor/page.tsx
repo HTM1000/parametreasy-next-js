@@ -516,7 +516,6 @@ Exemplos de formatação:
 *Este texto ficará em itálico*
 __Este texto ficará sublinhado__
 `Este texto ficará como código`
-[Google](https://google.com)
 
 # Título Principal
 ## Subtítulo

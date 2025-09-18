@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
-import { 
-  FileText, 
-  Check, 
-  Code, 
-  RotateCcw, 
-  Copy, 
-  Zap
+import {
+  FileText,
+  Check,
+  Code,
+  RotateCcw,
+  Copy,
+  Zap,
+  AlertTriangle,
+  X
 } from "lucide-react"
 import { z } from "zod"
 import { generateSQLScript, type ScriptResult } from "@/lib/script-generator"
@@ -27,9 +29,11 @@ export default function ScriptGenerator() {
   const [scriptResult, setScriptResult] = useState<ScriptResult | null>(null)
   const [displayedScript, setDisplayedScript] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [lastProcessedScript, setLastProcessedScript] = useState("")
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   function createEmptyParametro(): Parametro {
     return {
@@ -63,13 +67,14 @@ export default function ScriptGenerator() {
 
   // Efeito de digitação no terminal - super rápido
   useEffect(() => {
-    if (scriptResult && scriptResult.script && scriptResult.script !== displayedScript) {
+    if (scriptResult && scriptResult.script && scriptResult.script !== lastProcessedScript) {
       setIsTyping(true)
       setDisplayedScript("")
-      
+      setLastProcessedScript(scriptResult.script)
+
       const script = scriptResult.script
       let currentIndex = 0
-      
+
       const typeWriter = () => {
         if (currentIndex < script.length) {
           const charsToAdd = Math.min(15, script.length - currentIndex) // Bem rápido
@@ -80,10 +85,10 @@ export default function ScriptGenerator() {
           setIsTyping(false)
         }
       }
-      
+
       setTimeout(typeWriter, 50) // Delay mínimo
     }
-  }, [scriptResult, displayedScript])
+  }, [scriptResult, lastProcessedScript])
 
   const resetForm = () => {
     setParametro(createEmptyParametro())
@@ -91,6 +96,7 @@ export default function ScriptGenerator() {
     setScriptResult(null)
     setDisplayedScript("")
     setIsTyping(false)
+    setLastProcessedScript("")
   }
 
   const handleGenerateHtml = () => {
@@ -99,7 +105,44 @@ export default function ScriptGenerator() {
   }
 
   const updateParametro = (field: string, value: unknown) => {
-    setParametro(prev => ({ ...prev, [field]: value }))
+    setParametro(prev => {
+      const updated = { ...prev, [field]: value }
+
+      // Se mudou o tipo, resetar todos os valores para valores padrão
+      if (field === 'tipo') {
+        updated.valorString = ""
+        updated.valorInt = undefined
+        updated.valorDecimal = undefined
+        updated.valorBit = false
+        updated.valorDate = undefined
+        updated.valorImagem = ""
+
+        // Definir valores padrão baseado no novo tipo
+        switch (value as ParameterType) {
+          case ParameterType.String:
+            updated.valorString = ""
+            break
+          case ParameterType.Int:
+            updated.valorInt = undefined
+            break
+          case ParameterType.Decimal:
+            updated.valorDecimal = undefined
+            break
+          case ParameterType.Bit:
+            updated.valorBit = false
+            break
+          case ParameterType.Date:
+            updated.valorDate = undefined
+            break
+          case ParameterType.Image:
+            updated.valorImagem = ""
+            break
+        }
+      }
+
+      return updated
+    })
+
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev }
@@ -135,6 +178,16 @@ export default function ScriptGenerator() {
   }
 
   const generateScript = () => {
+    // Verificar se página está vazia e mostrar dialog
+    if (!parametro.pagina || parametro.pagina.trim() === "") {
+      setShowConfirmDialog(true)
+      return
+    }
+
+    executeGeneration()
+  }
+
+  const executeGeneration = () => {
     if (!validateParametro()) {
       return
     }
@@ -148,6 +201,7 @@ export default function ScriptGenerator() {
       alert("Erro ao gerar script")
     } finally {
       setLoading(false)
+      setShowConfirmDialog(false)
     }
   }
 
@@ -184,6 +238,17 @@ export default function ScriptGenerator() {
             placeholder="Ex: 10.5"
           />
         )
+      case ParameterType.Bit:
+        return (
+          <Select
+            value={parametro.valorBit ? "true" : "false"}
+            onChange={(e) => updateParametro("valorBit", e.target.value === "true")}
+            className={commonClass}
+          >
+            <option value="false">Não</option>
+            <option value="true">Sim</option>
+          </Select>
+        )
       case ParameterType.Date:
         return (
           <Input
@@ -192,17 +257,6 @@ export default function ScriptGenerator() {
             onChange={(e) => updateParametro("valorDate", e.target.value ? new Date(e.target.value) : undefined)}
             className={commonClass}
           />
-        )
-      case ParameterType.Bit:
-        return (
-          <Select
-            value={parametro.valorBit ? "true" : "false"}
-            onChange={(e) => updateParametro("valorBit", e.target.value === "true")}
-            className={commonClass}
-          >
-            <option value="false">Falso</option>
-            <option value="true">Verdadeiro</option>
-          </Select>
         )
       case ParameterType.Image:
         return (
@@ -284,9 +338,9 @@ export default function ScriptGenerator() {
                   <option value={ParameterType.String}>String</option>
                   <option value={ParameterType.Int}>Int</option>
                   <option value={ParameterType.Decimal}>Decimal</option>
+                  <option value={ParameterType.Bit}>Bool</option>
                   <option value={ParameterType.Date}>Date</option>
                   <option value={ParameterType.Image}>Image</option>
-                  <option value={ParameterType.Bit}>Bit</option>
                 </Select>
               </div>
               
@@ -356,16 +410,17 @@ export default function ScriptGenerator() {
               )}
             </div>
 
-            {/* Segunda linha de opcionais */}
+            {/* Campo Página e Homologando */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium mb-2 block">Página</Label>
+                <Label className="text-sm font-medium mb-2 block">Página (recomendado)</Label>
                 <Input
                   value={parametro.pagina || ""}
                   onChange={(e) => updateParametro("pagina", e.target.value)}
                   className="h-10"
-                  placeholder="frmParametro (opcional)"
+                  placeholder="frmParametro"
                 />
+                <p className="text-xs text-muted-foreground mt-1">Se vazio, será solicitada confirmação</p>
               </div>
               <div>
                 <Label className="text-sm font-medium mb-2 block">Homologando</Label>
@@ -379,6 +434,7 @@ export default function ScriptGenerator() {
                 </Select>
               </div>
             </div>
+
 
             <div>
               <Label className="text-sm font-medium mb-2 block">Itens (opcional)</Label>
@@ -480,7 +536,7 @@ export default function ScriptGenerator() {
                 <div className="text-slate-400 space-y-2">
                   <p className="text-green-400">$ parametreasy --single-param</p>
                   <p className="text-blue-400">Parametreasy Single Parameter Generator v1.0</p>
-                  <p>Status: {isFormValid ? <span className="text-green-400">Ready to generate</span> : <span className="text-yellow-400">Waiting for form completion</span>}</p>
+                  <p>Status: {isFormValid ? <span className="text-green-400">Pronto para gerar</span> : <span className="text-yellow-400">Aguardando preenchimento do formulário</span>}</p>
                   <p className="text-slate-500 mt-4">Aguardando comando de geração...</p>
                   <p className="flex items-center text-slate-600">
                     $ <span className="animate-pulse ml-2 bg-green-400 w-2 h-4 inline-block"></span>
@@ -512,6 +568,67 @@ export default function ScriptGenerator() {
         </div>
 
       </div>
+
+      {/* Dialog de Confirmação */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-xl max-w-md w-full p-6 shadow-2xl">
+
+            {/* Header do Dialog */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-yellow-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Campo Página Vazio</h3>
+                <p className="text-sm text-muted-foreground">Confirme antes de continuar</p>
+              </div>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="mb-6">
+              <p className="text-sm text-muted-foreground mb-3">
+                O campo <strong>Página</strong> não foi preenchido. Recomendamos informar a página onde o parâmetro será usado.
+              </p>
+              <div className="bg-muted/50 border border-border rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">💡 Exemplo de preenchimento:</p>
+                <p className="text-sm font-mono">frmParametro</p>
+              </div>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowConfirmDialog(false)}
+                variant="ghost"
+                className="flex-1"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Cancelar
+              </Button>
+              <Button
+                onClick={executeGeneration}
+                className="flex-1"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full w-4 h-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Continuar Assim Mesmo
+                  </>
+                )}
+              </Button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

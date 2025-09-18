@@ -31,7 +31,7 @@ export function generateSQLScript(parametros: Parametro[]): ScriptResult {
     sql += `${parameter.valorDecimal !== undefined && parameter.valorDecimal !== null ? parameter.valorDecimal.toFixed(3).replace(",", ".") : "NULL"}, `;
     
     // v_VALORIMAGEM
-    sql += `NULL, `;
+    sql += `${parameter.valorImagem && parameter.valorImagem.trim() !== "" ? `'${parameter.valorImagem.toUpperCase()}'` : "NULL"}, `;
     
     // palavraschave
     sql += `NULL, `;
@@ -46,13 +46,13 @@ export function generateSQLScript(parametros: Parametro[]): ScriptResult {
     sql += `${parameter.valorBit !== undefined && parameter.valorBit !== null ? RetornarValorCampoBoolean(parameter.valorBit) : "NULL"}, `;
     
     // itens
-    sql += `NULL, `;
+    sql += `${parameter.itens && parameter.itens.trim() !== "" ? `'${parameter.itens.toUpperCase()}'` : "NULL"}, `;
     
     // DescricaoAjuda
     sql += `'${parameter.descricaoAjuda?.toUpperCase()}', `;
     
     // valorDate
-    sql += `NULL, `;
+    sql += `${parameter.valorDate ? `'${parameter.valorDate.toISOString().split('T')[0]}'` : "NULL"}, `;
     
     // Homologando
     const homologandoValue = parameter.homologando === SimNaoEnum.Sim ? 1 : 0;
