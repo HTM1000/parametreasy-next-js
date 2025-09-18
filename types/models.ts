@@ -4,7 +4,8 @@ export enum ParameterType {
   Decimal = 'decimal',
   Date = 'date',
   Image = 'image',
-  Bit = 'bit'
+  Bit = 'bit',
+  MultipleItems = 'multiple_items'
 }
 
 export enum SimNaoEnum {

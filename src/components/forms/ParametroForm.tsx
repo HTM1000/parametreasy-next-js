@@ -22,8 +22,8 @@ export function ParametroForm({
   onGenerateHtml
 }: ParametroFormProps) {
   return (
-    <div className="bg-gradient-to-br from-white to-slate-50/50 border-2 border-slate-200/60 rounded-2xl p-8 shadow-sm backdrop-blur-sm">
-      <div className="flex items-center justify-between mb-8">
+    <div className="bg-gradient-to-br from-white to-slate-50/50 border-2 border-slate-200/60 rounded-2xl p-6 shadow-sm backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
             <FileText className="w-5 h-5 text-white" />
@@ -87,6 +87,7 @@ export function ParametroForm({
               <option value={ParameterType.Bit}>✅ Bool</option>
               <option value={ParameterType.Date}>📅 Date</option>
               <option value={ParameterType.Image}>🖼️ Image</option>
+              <option value={ParameterType.MultipleItems}>📋 Múltiplos Itens</option>
             </Select>
           </div>
 
@@ -238,31 +239,35 @@ export function ParametroForm({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <Tag className="w-4 h-4 text-pink-500" />
-            Itens (opcional)
-          </Label>
-          <div className="relative">
-            <Input
-              value={parametro.itens || ""}
-              onChange={(e) => onUpdateParametro("itens", e.target.value)}
-              className="h-12 pl-4 pr-4 text-sm border-2 border-slate-200 focus:border-pink-500 focus:ring-pink-500/20 hover:border-slate-300 transition-all duration-200 rounded-lg bg-white/50 backdrop-blur-sm"
-              placeholder="item1,item2,item3"
+        {parametro.tipo === ParameterType.MultipleItems && (
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Tag className="w-4 h-4 text-pink-500" />
+              Itens *
+            </Label>
+            <div className="relative">
+              <Input
+                value={parametro.itens || ""}
+                onChange={(e) => onUpdateParametro("itens", e.target.value)}
+                className="h-12 pl-4 pr-4 text-sm border-2 border-slate-200 focus:border-pink-500 focus:ring-pink-500/20 hover:border-slate-300 transition-all duration-200 rounded-lg bg-white/50 backdrop-blur-sm"
+                placeholder="item1,item2,item3"
+              />
+            </div>
+          </div>
+        )}
+
+        {parametro.tipo !== ParameterType.MultipleItems && (
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Settings className="w-4 h-4 text-violet-500" />
+              Valor Padrão ({parametro.tipo})
+            </Label>
+            <ValueFieldRenderer
+              parametro={parametro}
+              onUpdateParametro={onUpdateParametro}
             />
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <Settings className="w-4 h-4 text-violet-500" />
-            Valor Padrão ({parametro.tipo})
-          </Label>
-          <ValueFieldRenderer
-            parametro={parametro}
-            onUpdateParametro={onUpdateParametro}
-          />
-        </div>
+        )}
       </div>
     </div>
   )

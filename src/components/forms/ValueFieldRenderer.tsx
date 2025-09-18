@@ -62,6 +62,21 @@ export function ValueFieldRenderer({ parametro, onUpdateParametro }: ValueFieldR
           placeholder="https://exemplo.com/img.jpg"
         />
       )
+    case ParameterType.MultipleItems:
+      return (
+        <Select
+          value={parametro.valorString || ""}
+          onChange={(e) => onUpdateParametro("valorString", e.target.value)}
+          className={commonClass}
+        >
+          <option value="">Selecione um item</option>
+          {parametro.itens?.split(',').map((item, index) => (
+            <option key={index} value={item.trim()}>
+              {item.trim()}
+            </option>
+          ))}
+        </Select>
+      )
     default:
       return (
         <Input
